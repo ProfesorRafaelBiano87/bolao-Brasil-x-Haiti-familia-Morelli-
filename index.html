@@ -3,24 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bolão Brasil × Haiti</title>
+    <title>Bolão Brasil × Haiti - Ao Vivo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    
     <style>
-        body { background: linear-gradient(135deg, #1e40af, #0e7490); }
-        .card { transition: all 0.3s; }
-        .card:hover { transform: translateY(-8px); }
+        body { background: linear-gradient(135deg, #1e3a8a, #0e7490); }
+        .aposta-card { transition: all 0.3s; }
+        .aposta-card:hover { transform: scale(1.03); }
     </style>
 </head>
 <body class="min-h-screen text-white">
     <div class="container mx-auto max-w-4xl px-4 py-8">
         <div class="text-center mb-10">
-            <h1 class="text-5xl font-bold mb-2">🇧🇷 BOLÃO BRASIL × HAITI 🇭🇹</h1>
-            <p class="text-xl">Copa do Mundo 2026</p>
+            <h1 class="text-5xl font-bold mb-2">🇧🇷 BRASIL × HAITI 🇭🇹</h1>
+            <p class="text-2xl">Bolão Copa do Mundo 2026</p>
+            <p class="text-sm text-white/70 mt-2">Apostas em tempo real</p>
         </div>
 
         <!-- Formulário -->
-        <div class="bg-white/10 backdrop-blur-lg rounded-3xl p-8 mb-8">
+        <div class="bg-white/10 backdrop-blur-xl rounded-3xl p-8 mb-10">
             <h2 class="text-2xl font-bold mb-6">Faça sua aposta</h2>
             
             <input id="nome" type="text" placeholder="Seu nome ou apelido" 
@@ -28,104 +32,132 @@
 
             <div class="grid grid-cols-2 gap-6 mb-8">
                 <div>
-                    <label class="block text-sm mb-2">Brasil</label>
+                    <label class="block text-sm mb-2">Brasil 🇧🇷</label>
                     <input id="gols-brasil" type="number" min="0" value="3" 
                            class="w-full bg-white/20 text-center text-6xl font-bold rounded-2xl py-6 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-sm mb-2">Haiti</label>
+                    <label class="block text-sm mb-2">Haiti 🇭🇹</label>
                     <input id="gols-haiti" type="number" min="0" value="1" 
                            class="w-full bg-white/20 text-center text-6xl font-bold rounded-2xl py-6 focus:outline-none">
                 </div>
             </div>
 
-            <button onclick="enviarAposta()" 
-                    class="w-full bg-green-500 hover:bg-green-600 text-white font-bold text-xl py-6 rounded-3xl flex items-center justify-center gap-3">
-                <i class="fas fa-whatsapp text-2xl"></i>
-                ENVIAR APOSTA VIA WHATSAPP
+            <button onclick="fazerAposta()" 
+                    class="w-full bg-green-500 hover:bg-green-600 font-bold text-xl py-6 rounded-3xl flex items-center justify-center gap-3">
+                <i class="fas fa-paper-plane"></i>
+                REGISTRAR APOSTA
             </button>
         </div>
 
-        <!-- Lista de Apostas (atualizada pelo admin) -->
-        <div class="bg-white/10 backdrop-blur-lg rounded-3xl p-8">
-            <div class="flex justify-between mb-6">
-                <h2 class="text-2xl font-bold">Apostas Registradas (<span id="count">0</span>)</h2>
-                <button onclick="copiarLista()" class="text-sm underline">Copiar lista completa</button>
-            </div>
-            <div id="lista" class="space-y-4 max-h-[600px] overflow-y-auto"></div>
+        <!-- Lista de Apostas -->
+        <div class="bg-white/10 backdrop-blur-xl rounded-3xl p-8">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                Apostas Registradas 
+                <span id="total" class="bg-white/20 text-sm px-4 py-1 rounded-full">0</span>
+            </h2>
+            <div id="lista-apostas" class="space-y-4 max-h-[600px] overflow-y-auto"></div>
         </div>
     </div>
 
     <script>
-        // === LISTA DE APOSTAS (ADMIN ATUALIZA AQUI) ===
-        let apostas = [
-            { nome: "Buiu", brasil: 6, haiti: 0, data: "19/06/2026 10:00" },
-             { nome: "Elvis", brasil: 3, haiti: 0, data: "19/06/2026 10:31" },
-            { nome: "Bigato", brasil: 3, haiti: 1, data: "19/06/2026 10:32" },
-        ];
+        // ================== CONFIGURE AQUI SEU FIREBASE ==================
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY",
+            authDomain: "SEU_PROJETO.firebaseapp.com",
+            projectId: "SEU_PROJETO",
+            storageBucket: "SEU_PROJETO.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+        // =================================================================
 
-        function renderizar() {
-            const container = document.getElementById('lista');
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let apostas = [];
+
+        // Renderizar apostas
+        function renderizarApostas() {
+            const container = document.getElementById('lista-apostas');
             container.innerHTML = '';
             
-            apostas.sort((a,b) => new Date(b.data) - new Date(a.data));
-            
-            apostas.forEach(ap => {
+            apostas.sort((a, b) => b.timestamp - a.timestamp);
+
+            apostas.forEach(aposta => {
                 const div = document.createElement('div');
-                div.className = "bg-white/10 rounded-2xl p-5 flex justify-between items-center card";
+                div.className = "bg-white/10 rounded-2xl p-6 aposta-card flex justify-between items-center";
                 div.innerHTML = `
                     <div>
-                        <div class="font-semibold text-lg">${ap.nome}</div>
-                        <div class="text-xs text-white/60">${ap.data}</div>
+                        <div class="font-semibold text-xl">${aposta.nome}</div>
+                        <div class="text-xs text-white/60">${new Date(aposta.timestamp).toLocaleString('pt-BR')}</div>
                     </div>
-                    <div class="flex items-center gap-8 text-3xl font-bold">
-                        <div>${ap.brasil} <span class="text-sm font-normal">🇧🇷</span></div>
-                        <div class="text-white/40">x</div>
-                        <div>${ap.haiti} <span class="text-sm font-normal">🇭🇹</span></div>
+                    <div class="flex items-center gap-8 text-4xl font-bold">
+                        <div>${aposta.brasil} <span class="text-2xl">🇧🇷</span></div>
+                        <div class="text-white/40 text-3xl">×</div>
+                        <div>${aposta.haiti} <span class="text-2xl">🇭🇹</span></div>
                     </div>
                 `;
                 container.appendChild(div);
             });
-            
-            document.getElementById('count').textContent = apostas.length;
+
+            document.getElementById('total').textContent = apostas.length;
         }
 
-        function enviarAposta() {
+        // Fazer aposta
+        async function fazerAposta() {
             const nome = document.getElementById('nome').value.trim();
-            const brasil = document.getElementById('gols-brasil').value;
-            const haiti = document.getElementById('gols-haiti').value;
+            const brasil = parseInt(document.getElementById('gols-brasil').value);
+            const haiti = parseInt(document.getElementById('gols-haiti').value);
 
             if (!nome) {
-                alert("Por favor, digite seu nome!");
+                alert("Por favor, digite seu nome ou apelido!");
+                return;
+            }
+            if (isNaN(brasil) || isNaN(haiti)) {
+                alert("Preencha o placar corretamente!");
                 return;
             }
 
-            const texto = `*Nova Aposta - Brasil x Haiti*\n\n` +
-                         `👤 *Nome:* ${nome}\n` +
-                         `🇧🇷 *Brasil:* ${brasil}\n` +
-                         `🇭🇹 *Haiti:* ${haiti}\n\n` +
-                         `Enviado em: ${new Date().toLocaleString('pt-BR')}`;
+            try {
+                await db.collection('apostas').add({
+                    nome: nome,
+                    brasil: brasil,
+                    haiti: haiti,
+                    timestamp: Date.now()
+                });
 
-            // Copia para área de transferência
-            navigator.clipboard.writeText(texto).then(() => {
-                alert("✅ Aposta copiada! Agora é só colar no grupo do WhatsApp.");
+                alert("✅ Aposta registrada com sucesso!");
                 
-                // Limpa formulário
+                // Limpar formulário
                 document.getElementById('nome').value = '';
-            });
+                
+            } catch (error) {
+                console.error(error);
+                alert("Erro ao salvar aposta. Tente novamente.");
+            }
         }
 
-        function copiarLista() {
-            let texto = "📊 *BOLÃO BRASIL x HAITI*\n\n";
-            apostas.forEach(ap => {
-                texto += `${ap.nome}: ${ap.brasil} x ${ap.haiti}\n`;
-            });
-            navigator.clipboard.writeText(texto);
-            alert("Lista copiada para o clipboard!");
+        // Escutar mudanças em tempo real
+        function carregarApostas() {
+            db.collection('apostas')
+                .onSnapshot((snapshot) => {
+                    apostas = [];
+                    snapshot.forEach(doc => {
+                        apostas.push(doc.data());
+                    });
+                    renderizarApostas();
+                });
         }
 
-        // Inicializa
-        window.onload = renderizar;
+        // Inicializar
+        window.onload = () => {
+            if (firebaseConfig.apiKey === "SUA_API_KEY") {
+                alert("⚠️ Configure seu Firebase primeiro! Substitua os dados no código.");
+            }
+            carregarApostas();
+        };
     </script>
 </body>
 </html>
