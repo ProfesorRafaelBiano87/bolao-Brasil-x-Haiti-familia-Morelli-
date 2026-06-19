@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bolão Brasil × Haiti - Copa 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3a8a, #0ea5e9);
+        }
+        .card {
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        .placar {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-white">
+    <div class="container mx-auto max-w-4xl px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="flex justify-center items-center gap-4 mb-4">
+                <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-4xl">🇧🇷</div>
+                <div class="text-5xl font-bold">×</div>
+                <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-4xl">🇭🇹</div>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-2">BOLÃO BRASIL × HAITI</h1>
+            <p class="text-xl">Copa do Mundo 2026 - Grupo C</p>
+            <div class="mt-4 inline-flex items-center bg-white/10 backdrop-blur-md px-6 py-2 rounded-full text-sm">
+                <i class="fas fa-calendar-alt mr-2"></i>
+                19 de junho de 2026 • 21:30 (Brasília)
+                <span class="mx-3">•</span>
+                Lincoln Financial Field, Filadélfia (EUA)
+            </div>
+        </div>
+
+        <!-- Status do Jogo -->
+        <div id="match-status" class="bg-white/10 backdrop-blur-md rounded-3xl p-6 mb-8 text-center">
+            <div class="flex justify-between items-center max-w-md mx-auto">
+                <div class="text-center">
+                    <div class="text-6xl mb-2">🇧🇷</div>
+                    <div class="font-bold text-2xl">Brasil</div>
+                </div>
+                <div class="text-center">
+                    <div id="placar-atual" class="placar text-5xl font-mono">0 - 0</div>
+                    <div class="text-sm text-white/70 mt-1">PLACAR AO VIVO</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-6xl mb-2">🇭🇹</div>
+                    <div class="font-bold text-2xl">Haiti</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulário de Aposta -->
+        <div class="bg-white/10 backdrop-blur-md rounded-3xl p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                <i class="fas fa-trophy"></i> Faça sua aposta
+            </h2>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm mb-2 font-medium">Seu Nome / Apelido</label>
+                    <input id="nome" type="text" 
+                           class="w-full bg-white/20 border border-white/30 rounded-2xl px-5 py-4 focus:outline-none focus:border-white text-lg"
+                           placeholder="Ex: João Silva">
+                </div>
+                
+                <div>
+                    <label class="block text-sm mb-2 font-medium">Seu Palpite (Gols)</label>
+                    <div class="flex gap-4 items-center">
+                        <div class="flex-1">
+                            <div class="flex items-center bg-white/20 rounded-2xl px-4 py-4">
+                                <span class="text-3xl mr-3">🇧🇷</span>
+                                <input id="gols-brasil" type="number" min="0" value="3"
+                                       class="bg-transparent w-full text-4xl font-bold focus:outline-none text-center">
+                            </div>
+                        </div>
+                        <div class="text-4xl font-light text-white/50">×</div>
+                        <div class="flex-1">
+                            <div class="flex items-center bg-white/20 rounded-2xl px-4 py-4">
+                                <span class="text-3xl mr-3">🇭🇹</span>
+                                <input id="gols-haiti" type="number" min="0" value="0"
+                                       class="bg-transparent w-full text-4xl font-bold focus:outline-none text-center">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="fazerAposta()" 
+                    class="mt-8 w-full bg-yellow-400 hover:bg-yellow-300 transition-colors text-black font-bold text-xl py-5 rounded-3xl flex items-center justify-center gap-3">
+                <i class="fas fa-paper-plane"></i>
+                REGISTRAR MINHA APOSTA
+            </button>
+            <p class="text-center text-xs text-white/60 mt-4">
+                As apostas ficam salvas no navegador. Para compartilhar com o grupo, tire print ou envie o placar.
+            </p>
+        </div>
+
+        <!-- Lista de Apostas -->
+        <div class="bg-white/10 backdrop-blur-md rounded-3xl p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold flex items-center gap-3">
+                    <i class="fas fa-list"></i> Apostas Registradas
+                    <span id="total-apostas" class="bg-white/20 text-xs px-3 py-1 rounded-full">0 apostas</span>
+                </h2>
+                <button onclick="limparApostas()" 
+                        class="text-sm text-white/60 hover:text-white flex items-center gap-1">
+                    <i class="fas fa-trash"></i> Limpar
+                </button>
+            </div>
+            
+            <div id="lista-apostas" class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                <!-- Apostas serão inseridas via JS -->
+            </div>
+        </div>
+
+        <!-- Regras -->
+        <div class="mt-10 text-center text-sm text-white/70">
+            <h3 class="font-bold mb-3 text-lg">Regras do Bolão</h3>
+            <div class="grid md:grid-cols-3 gap-4 text-left max-w-2xl mx-auto">
+                <div class="bg-white/10 p-4 rounded-2xl">
+                    <strong>1º Lugar:</strong> Placar exato
+                </div>
+                <div class="bg-white/10 p-4 rounded-2xl">
+                    <strong>2º Lugar:</strong> Vencedor + diferença de gols
+                </div>
+                <div class="bg-white/10 p-4 rounded-2xl">
+                    <strong>3º Lugar:</strong> Vencedor
+                </div>
+            </div>
+            <p class="mt-6">Boa sorte a todos! 🇧🇷</p>
+        </div>
+    </div>
+
+    <footer class="text-center py-8 text-white/40 text-sm">
+        Bolão criado para o jogo Brasil × Haiti • GitHub Pages
+    </footer>
+
+    <script>
+        // Array de apostas (persistido no localStorage)
+        let apostas = JSON.parse(localStorage.getItem('bolaoBrasilHaiti')) || [
+            {
+                nome: "Admin",
+                brasil: 3,
+                haiti: 1,
+                data: "19/06/2026 10:00"
+            }
+        ];
+
+        function salvarApostas() {
+            localStorage.setItem('bolaoBrasilHaiti', JSON.stringify(apostas));
+        }
+
+        function formatarData() {
+            const agora = new Date();
+            return `${agora.getDate().toString().padStart(2,'0')}/${(agora.getMonth()+1).toString().padStart(2,'0')}/${agora.getFullYear()} ${agora.getHours().toString().padStart(2,'0')}:${agora.getMinutes().toString().padStart(2,'0')}`;
+        }
+
+        function renderizarApostas() {
+            const container = document.getElementById('lista-apostas');
+            container.innerHTML = '';
+            
+            apostas.sort((a, b) => new Date(b.data) - new Date(a.data));
+            
+            apostas.forEach((aposta, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-white/10 hover:bg-white/20 transition-colors rounded-2xl p-5 flex items-center justify-between card';
+                div.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-xl">
+                            👤
+                        </div>
+                        <div>
+                            <div class="font-semibold">${aposta.nome}</div>
+                            <div class="text-xs text-white/60">${aposta.data}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-6">
+                        <div class="text-right">
+                            <div class="text-3xl font-bold">${aposta.brasil}</div>
+                            <div class="text-xs text-white/60">BRASIL</div>
+                        </div>
+                        <div class="text-2xl text-white/40">×</div>
+                        <div class="text-left">
+                            <div class="text-3xl font-bold">${aposta.haiti}</div>
+                            <div class="text-xs text-white/60">HAITI</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            
+            document.getElementById('total-apostas').textContent = `${apostas.length} apostas`;
+        }
+
+        function fazerAposta() {
+            const nome = document.getElementById('nome').value.trim();
+            const golsBrasil = parseInt(document.getElementById('gols-brasil').value) || 0;
+            const golsHaiti = parseInt(document.getElementById('gols-haiti').value) || 0;
+            
+            if (!nome) {
+                alert("Por favor, digite seu nome ou apelido!");
+                return;
+            }
+            
+            apostas.push({
+                nome: nome,
+                brasil: golsBrasil,
+                haiti: golsHaiti,
+                data: formatarData()
+            });
+            
+            salvarApostas();
+            renderizarApostas();
+            
+            // Feedback visual
+            const btn = document.querySelector('button[onclick="fazerAposta()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-check"></i> APOSTA REGISTRADA!`;
+            btn.style.backgroundColor = '#22c55e';
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.backgroundColor = '';
+            }, 2000);
+            
+            // Limpa formulário
+            document.getElementById('nome').value = '';
+        }
+
+        function limparApostas() {
+            if (confirm("Tem certeza que deseja limpar todas as apostas?")) {
+                apostas = [];
+                salvarApostas();
+                renderizarApostas();
+            }
+        }
+
+        // Inicialização
+        window.onload = function() {
+            renderizarApostas();
+            
+            // Atualiza placar "ao vivo" aleatoriamente (demo)
+            setInterval(() => {
+                const placar = document.getElementById('placar-atual');
+                const b = Math.floor(Math.random() * 5);
+                const h = Math.floor(Math.random() * 2);
+                placar.textContent = `${b} - ${h}`;
+            }, 8000);
+        };
+    </script>
+</body>
+</html>
